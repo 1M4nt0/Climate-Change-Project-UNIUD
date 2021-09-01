@@ -395,7 +395,7 @@ head(df_emissions_country, 10)
 Correlazione tra aumento di emissione di CO2 e aumento di Temperatura del pianeta:
 
 ```{r}
-cor(emissions_vs_temp$Emissions, emissions_vs_temp$AverageTemperature)
+cor.test(emissions_vs_temp$Emissions, emissions_vs_temp$AverageTemperature)
 ```
 
 
@@ -416,7 +416,7 @@ df_emissions_country_year <- df_emissions_country_year %>% group_by(Country) %>%
 
 emissions_vs_temp_country <- left_join(min_max, df_emissions_country_year)
 emissions_vs_temp_country <- emissions_vs_temp_country[complete.cases(emissions_vs_temp_country),]
-cor(emissions_vs_temp_country$diff_temp, emissions_vs_temp_country$total_emissions_1970_2012)
+cor.test(emissions_vs_temp_country$diff_temp, emissions_vs_temp_country$total_emissions_1970_2012)
 ```
 Tabella di confronto emissioni/rank nei vari paesi
 
