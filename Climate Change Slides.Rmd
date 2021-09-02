@@ -119,6 +119,31 @@ ggplot(data = season_temp_2002_2012, aes(x = continent, y = AverageTemperature, 
 
 ```
 
+
+Temperature medie attuali nei vari continenti durante l'anno
+
+```{r fig.height=2.5}
+continent_temp_2002_2012 <- df %>% filter(Year %in% (2002:2012)) %>% group_by(continent) %>% 
+  summarise(AverageTemperature=mean(AverageTemperature, na.rm=TRUE))
+
+ggplot(continent_temp_2002_2012, aes(x = reorder(continent, AverageTemperature), y = AverageTemperature)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label=format(round(AverageTemperature, 1))), hjust = +1.5, size = 5, colour="white") +
+  coord_flip() +
+  labs(y= "Average year temperature (°C)", x = "Continent") +
+  theme_minimal() +
+  theme(panel.grid.major=element_blank()) +
+  theme(panel.border=element_blank()) +
+  theme(axis.ticks=element_blank()) +
+  theme(plot.title=element_text(face="bold")) +
+  theme(plot.subtitle=element_text(face="italic", size=9, margin=margin(b=12))) +
+  theme(plot.caption=element_text(size=7, margin=margin(t=12), color="#7a7d7e")) +
+  theme(axis.text.x=element_blank(), axis.title.y=element_blank())
+```
+
+
+
+
 ```{r echo=FALSE, message=FALSE, comment="", results='hide'}
 data("World")
 temp_2002_2012 <- df %>% filter(Year %in% (2002:2012)) %>% group_by(iso_a3, season) %>% 
@@ -138,8 +163,6 @@ world_anim <-
 tmap_animation(world_anim, filename = "season_world_anim.gif", delay = 100, width = 1000, height = 620)
 ```
 
-Temperature medie nelle varie stagioni nel periodo 2002-2012
-
 ```{r}
 knitr::include_graphics("season_world_anim.gif")
 ```
@@ -152,8 +175,8 @@ library(zoo)
 df_pond <- df %>% group_by(Year) %>% 
   summarise(AverageTemperature=mean(AverageTemperature, na.rm = TRUE),
             AverageTemperatureUncertainty=mean(AverageTemperatureUncertainty, na.rm = TRUE)) %>%
-  mutate(AverageTemperature=rollmedian(AverageTemperature, k = 10,  fill = NA, align="right"),
-         AverageTemperatureUncertainty=rollmedian(AverageTemperatureUncertainty, k = 10,  fill = NA, align="right")) %>% 
+  mutate(AverageTemperature=rollmean(AverageTemperature, k = 10,  fill = NA, align="right"),
+         AverageTemperatureUncertainty=rollmean(AverageTemperatureUncertainty, k = 10,  fill = NA, align="right")) %>% 
   filter(Year > 1758) %>%
   mutate(minAverageTemperature=AverageTemperature-AverageTemperatureUncertainty,
          maxAverageTemperature=AverageTemperature+AverageTemperatureUncertainty)
@@ -193,8 +216,8 @@ world_anim <-
   tm_facets(along = "Year", free.coords = FALSE, showNA = FALSE) +
   tm_style("col_blind") +
   tm_fill("diff_temp", title="Temp. difference since 1860", style = "fixed",
-        breaks = c(0, 0.4, 0.8, 1.2, 1.4, 1.8, Inf),
-        palette = c("#00ACEC", "#7AC3FF", "yellow", "orange", "red", "#BA0000"),
+        breaks = c(0, 0.3, 0.6, 0.9, 1.2, 1.5, 1.8, Inf),
+        palette = c("#00ACEC", "#7AC3FF", "#a6e0ff", "yellow", "orange", "red", "#BA0000"),
         colorNA = "gray") +
   tm_borders()
 
@@ -209,7 +232,7 @@ knitr::include_graphics("world_anim.gif")
 ```
 
 
-Dal grafico si può notare che effettivamente in media la temperatura è costantemente aumentata nel periodo analizzato con una variazione nella media di circa 3°C (+17%) ai giorni nostri rispetto al 1860.
+Dal grafico si può notare che effettivamente in media la temperatura è costantemente aumentata nel periodo analizzato con una variazione nella media di circa 3°C (+18%) ai giorni nostri rispetto al 1860.
 
 **Temperatura media periodo 1850-1860 e 2002-2012:**
 ```{r echo=FALSE, comment=""}
@@ -229,7 +252,7 @@ var_perc <- ( temp_2012$AverageTemperature * 100)/temp_1860$AverageTemperature -
 var_perc
 ```
 
-L'aumento più vertigionoso si nota tra il 1870-1900, periodo di piena rivoluzione industriale e tra il 1970-2010, anni in cui la produzione di energia proveniente da combustibili fossili è aumentata del 140%, le emissioni dei trasporti sono aumentate del 120% e le emissioni delle industrie del 65% ([Fonte](https://www.ipcc.ch/site/assets/uploads/2021/03/ar4-wg3-spm-1.pdf)).
+L'aumento più vertigionoso si nota successivamente al 1870, periodo di piena rivoluzione industriale e tra il 1970-2010, anni in cui la produzione di energia proveniente da combustibili fossili è aumentata del 140%, le emissioni dei trasporti sono aumentate del 120% e le emissioni delle industrie del 65% ([Fonte](https://www.ipcc.ch/site/assets/uploads/2021/03/ar4-wg3-spm-1.pdf)).
 
 
 ## Variazione della temperatura media nelle varie stagioni
@@ -409,7 +432,6 @@ df_emissions_country_year <- read_csv("./data/EmissionData.csv")
 df_emissions_country_year <- df_emissions_country_year %>% gather("Year", "Emissions", -1) %>% arrange(Country)
 df_emissions_country_year$Year <- as.numeric(df_emissions_country_year$Year)
 df_emissions_country_year$Emissions <- as.numeric(df_emissions_country_year$Emissions)
-df_emissions_country_year <- as.data.frame(df_emissions_country_year)
 df_emissions_country_year <- df_emissions_country_year %>% filter(Year>=1860, Year<=2012)
 df_emissions_country_year <- df_emissions_country_year %>% group_by(Country) %>% 
   summarise(total_emissions_1970_2012=sum(Emissions))
@@ -426,4 +448,10 @@ diff_temp_vs_rank <- left_join(min_max, df_emissions_country) %>%
 
 head(diff_temp_vs_rank %>% select(-iso_a3), 10)
 ```
+
+## Conclusioni
+
+- L'aumento di temperatura rispetto al 1860 è considerevole ed è di circa 3° (+18%)
+- L'aumento di temperatura è strettamente correlato all'aumento di produzione di CO2 da parte delle industrie (aumentato di 200 volte negli ultimi 160 anni)
+- L'aumento di temperatura non è uniforme tra i paesi e l'aumento di temperatura in un paese non è strettamente correlato alla quantità di CO2 che produce
 
